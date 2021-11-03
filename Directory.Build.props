@@ -1,0 +1,10 @@
+<Project>
+
+  <PropertyGroup>
+    <Version>0.1.0</Version>
+    <Authors>Ben Carruthers</Authors>
+    <Copyright>Copyright © 2021 Ben Carruthers</Copyright>
+    <Description></Description>
+  </PropertyGroup>
+
+</Project>

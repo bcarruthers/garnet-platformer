@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "isRoot": true,
+  "tools": {
+    "paket": {
+      "version": "6.0.6",
+      "commands": [
+        "paket"
+      ]
+    },
+    "garnet.processor": {
+      "version": "0.5.1",
+      "commands": [
+        "garnet"
+      ]
+    }
+  }
+}

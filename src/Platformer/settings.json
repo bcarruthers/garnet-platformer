@@ -1,0 +1,68 @@
+﻿{
+  "commands": [
+    {
+      "command": "Cancel",
+      "key": "Escape"
+    },
+    {
+      "command": "Reset",
+      "key": "R"
+    },
+    {
+      "command": "Jump",
+      "key": "Z"
+    },
+    {
+      "command": "Fire",
+      "key": "X"
+    },
+    {
+      "command": "Fire",
+      "key": "Space"
+    },
+    {
+      "command": "Fire",
+      "key": "Enter"
+    },
+    {
+      "command": "MoveUp",
+      "key": "W"
+    },
+    {
+      "command": "MoveLeft",
+      "key": "A"
+    },
+    {
+      "command": "MoveDown",
+      "key": "S"
+    },
+    {
+      "command": "MoveRight",
+      "key": "D"
+    },
+    {
+      "command": "FullScreen",
+      "key": "F11"
+    },
+    {
+      "command": "Debug",
+      "key": "F12"
+    },
+    {
+      "command": "MoveUp",
+      "key": "Up"
+    },
+    {
+      "command": "MoveLeft",
+      "key": "Left"
+    },
+    {
+      "command": "MoveDown",
+      "key": "Down"
+    },
+    {
+      "command": "MoveRight",
+      "key": "Right"
+    }
+  ]
+}
