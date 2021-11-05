@@ -20,7 +20,7 @@ module StartupSystem =
                     Title = "Platformer"
                     Width = 320 * scale
                     Height = 180 * scale
-                    Background = HsvaFloat(0.9f, 0.5f, 0.4f, 1.0f).ToRgbaFloat()
+                    Background = RgbaFloat.Black
                 }
             c.Set {
                 TimingSettings.Default with

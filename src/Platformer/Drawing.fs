@@ -1,10 +1,16 @@
 ﻿namespace Platformer
 
+open System
 open System.Numerics
 open Garnet.Numerics
 open Veldrid
 open Garnet.Graphics
 open Garnet.Composition
+
+// This is just a marker so we can distinguish sprites that need to
+// drawn to the fixed-resolution viewport
+type MainScene(ren : SpriteRenderer) =
+    member c.Renderer = ren
 
 module DrawingSystem =
     type Range2 with
@@ -71,7 +77,7 @@ module DrawingSystem =
             c.On<Draw> <| fun e ->
                 let atlas = c.Get<TextureAtlas>()
                 let rogue = atlas.[Textures.rogue]
-                let layers = c.Get<SpriteRenderer>()
+                let layers = c.Get<MainScene>().Renderer
                 let playerMesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.player)
                 for r in c.Query<Position, Facing, AnimationType, HitState, Controlled>() do
                     let hit = r.Value4
@@ -110,7 +116,7 @@ module DrawingSystem =
             c.On<Draw> <| fun _ ->
                 let atlas = c.Get<TextureAtlas>()
                 let spike = atlas.[Textures.spike]
-                let layers = c.Get<SpriteRenderer>()
+                let layers = c.Get<MainScene>().Renderer
                 let mesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.player)
                 for r in c.Query<Eid, Position, EnemyType>() do
                     let p = r.Value2
@@ -133,11 +139,11 @@ module DrawingSystem =
                 let color = HsvaFloat(0.0f, 0.5f, 1.0f, 1.0f).ToRgbaFloat()
                 let atlas = c.Get<TextureAtlas>()
                 let heart = atlas.[Textures.heart]
-                let layers = c.Get<SpriteRenderer>()
+                let layers = c.Get<MainScene>().Renderer
                 let powerupMesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.neutrals)
                 for r in c.Query<Position, HealthPowerup>() do
                     let p = r.Value1.pos.ToVector2() * 8.0f / float32 Block.size
-                    let size = Vector2.One * 8.0f
+                    let size = Vector2(9.0f, 8.0f)
                     powerupMesh.DrawQuad {
                         Center = p
                         Size = size
@@ -152,7 +158,7 @@ module DrawingSystem =
             c.On<Draw> <| fun _ ->
                 let grid = c.Get<Grid<BlockType>>()
                 let atlas = c.Get<TextureAtlas>()
-                let layers = c.Get<SpriteRenderer>()
+                let layers = c.Get<MainScene>().Renderer
                 let stoneWall = atlas.[Textures.stoneWall]
                 let spike = atlas.[Textures.spike]
                 let mesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.tiles)
@@ -189,7 +195,7 @@ module DrawingSystem =
             let margin = 1
             c.On<Draw> <| fun _ ->
                 let atlas = c.Get<TextureAtlas>()
-                let layers = c.Get<SpriteRenderer>()
+                let layers = c.Get<MainScene>().Renderer
                 let mesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.text)
                 for r in c.Query<HitPoints, Controlled>() do
                     let hp = r.Value1
@@ -205,7 +211,7 @@ module DrawingSystem =
             let margin = 1
             c.On<Draw> <| fun _ ->
                 let atlas = c.Get<TextureAtlas>()
-                let layers = c.Get<SpriteRenderer>()
+                let layers = c.Get<MainScene>().Renderer
                 let mesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.text)
                 let font = c.LoadResource<Font>(Fonts.mono)
                 let b = Range2i.Sized(Vector2i.Zero, Resolution.viewSize)
@@ -249,8 +255,48 @@ module DrawingSystem =
                     particles.Update(e.FixedDeltaTime)                
                 c.On<Draw> <| fun _ ->
                     let atlas = c.Get<TextureAtlas>()
-                    let layers = c.Get<SpriteRenderer>()
+                    let layers = c.Get<MainScene>().Renderer
                     particles.Draw(layers, atlas)
+                ]
+
+        member c.AddViewportDrawing() =
+            let device = c.Get<GraphicsDevice>()
+            let shaders = c.Get<ShaderSetCache>()
+            let cache = c.Get<ResourceCache>()
+            // Create a render target with our fixed resolution
+            let viewportTarget =
+                let shaderSet = shaders.GetOrCreate(device, ShaderSets.textureColor.Untyped, cache)
+                let target = new RenderTarget(device, shaderSet, Filtering.Point, BlendStateDescription.SingleOverrideBlend)
+                target.Background <- HsvaFloat(0.9f, 0.5f, 0.4f, 1.0f).ToRgbaFloat()
+                target.Width <- Resolution.width
+                target.Height <- Resolution.height
+                target
+            let mainSprites = new SpriteRenderer(device, shaders, cache)
+            c.Set(MainScene(mainSprites))
+            Disposable.Create [
+                mainSprites :> IDisposable
+                viewportTarget :> IDisposable
+                c.On<Draw> <| fun e ->
+                    // Pick the largest integer scale that can fit in the window
+                    let pixelScale =
+                        let xs = float32 e.ViewSize.X / float32 Resolution.width
+                        let ys = float32 e.ViewSize.Y / float32 Resolution.height
+                        min xs ys |> floor
+                    // Scale viewport to match selected pixel scale
+                    let viewScale =
+                        Vector2(
+                            float32 Resolution.width / float32 e.ViewSize.X * pixelScale,
+                            float32 Resolution.height / float32 e.ViewSize.Y * pixelScale)
+                    viewportTarget.WorldTransform <-
+                        Matrix4x4.CreateScale(viewScale.X, viewScale.Y, 1.0f)
+                c.On<PushDrawCommands> <| fun _ ->
+                    let context = c.Get<RenderContext>()
+                    let cameras = c.Get<CameraSet>()
+                    // Draw everything to viewport
+                    viewportTarget.BeginDraw(context)
+                    mainSprites.Draw(context, cameras)
+                    // Finish drawing to viewport and then draw viewport itself
+                    viewportTarget.EndDraw(context)
                 ]
             
     let add (c : Container) =
@@ -265,4 +311,5 @@ module DrawingSystem =
             c.AddPowerupDrawing()
             c.AddStatusHud()
             c.AddParticles()
+            c.AddViewportDrawing()
             ]

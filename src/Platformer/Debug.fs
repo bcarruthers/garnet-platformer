@@ -117,7 +117,7 @@ module DebugSystem =
                 if debug.IsDebugEnabled then                
                     let grid = c.Get<Grid<BlockType>>()
                     let atlas = c.Get<TextureAtlas>()
-                    let layers = c.Get<SpriteRenderer>()
+                    let layers = c.Get<MainScene>().Renderer
                     let solid = atlas.[Textures.solid]
                     let bgMesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.bgDebug)
                     bgMesh.DrawQuad(
@@ -145,7 +145,7 @@ module DebugSystem =
                 let debug = c.Get<DebugMode>()
                 if debug.IsDebugEnabled then                
                     let atlas = c.Get<TextureAtlas>()
-                    let layers = c.Get<SpriteRenderer>()
+                    let layers = c.Get<MainScene>().Renderer
                     let solid = atlas.[Textures.solid]
                     let mesh = layers.GetVertices<PositionTextureColorVertex>(SpriteLayers.debug)
                     let color = RgbaFloat.Cyan.MultiplyAlpha(0.5f)
